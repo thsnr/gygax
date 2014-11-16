@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+import collections
+import configparser
+import os.path
+import sys
+
+import gygax.bot
+import gygax.modules
+
+def _default_config():
+    config = configparser.ConfigParser()
+
+    # Use collections.OrderedDict so that printing out the default
+    # configuration will have a logical ordering to it.
+    config["bot"] = collections.OrderedDict((
+            ("nick", "gygax"),
+            ("real", "Gygax IRC bot, https://github.com/thsnr/gygax"),
+            ("server", "irc.example.org"),
+            ("port", 6667),
+            ("password", ""),
+            ("channels", "#example"),
+            ("modules", gygax.modules.list_modules()),
+        ))
+
+    return config
+
+def main(argv=None):
+
+    parser = argparse.ArgumentParser(description="Start the gygax IRC bot.")
+    parser.add_argument("-c", "--config", metavar="<config>",
+            help="location of the configuration file to use",
+            default=os.path.expanduser("~/.gygax/config"))
+    parser.add_argument("--default", action="store_true",
+            help="print out a default configuration and exit")
+    args = parser.parse_args(argv)
+
+    config = _default_config()
+    if args.default:
+        config.write(sys.stdout)
+        return
+
+    config.read(args.config)
+
+    gygax.bot.Bot(**config["bot"]).run()
+
+if __name__ == "__main__":
+    main()
