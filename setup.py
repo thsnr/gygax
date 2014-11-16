@@ -13,7 +13,8 @@ setup(
         author="Tiit Pikma",
         author_email="pikma@ut.ee",
         url="https://github.com/thsnr/gygax",
-        packages=["gygax"],
+        packages=["gygax", "gygax.modules"],
+        scripts=["scripts/gygax"],
         license="MIT",
         classifiers=[
             "Development Status :: 1 - Planning",
