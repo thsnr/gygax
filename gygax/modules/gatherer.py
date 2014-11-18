@@ -61,4 +61,4 @@ def search(q):
     except:
         return []
 
-gatherer.command = ".gatherer"
+gatherer.command = ".mtg"
