@@ -22,23 +22,41 @@ def gatherer(bot, sender, text):
     return
 
 def search(q):
-    req = request.Request("http://gatherer.wizards.com/Pages/Search/Default.aspx?name=+[%s]" % q)
+    q = "".join(["+[%s]" % word for word in q.split(" ")])
 
-    resultsArray = []
+    base_url = 'http://gatherer.wizards.com/Pages/Search/Default.aspx'
 
     try:
+        req = request.Request("%s?name=%s" % (base_url, q))
         response = request.urlopen(req)
-        html = response.read()
-        soup = BeautifulSoup(html)
 
-        resultsContainer = soup.find("div", attrs = {"id": 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_searchResultsContainer'})
-        if resultsContainer.contents:
-            results = resultsContainer.find_all('div', attrs = { "class": 'cardInfo' })
-            for result in results:
-                name = result.find('span', {'class': 'cardTitle'}).find('a').text
-                url = result.find('span', {'class': 'cardTitle'}).find('a')['href'].replace('../', 'http://gatherer.wizards.com/Pages/')
-                resultsArray += [{'name': name, 'url': url}]
-        return resultsArray
+        if (response.geturl().startswith(base_url)):
+            resultsArray = []
+
+            html = response.read()
+            soup = BeautifulSoup(html)
+
+            resultsContainer = soup.find("div", attrs = {"id": 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_searchResultsContainer'})
+            if resultsContainer.contents:
+                results = resultsContainer.find_all('div', attrs = { "class": 'cardInfo' })
+
+                for result in results:
+                    name = result.find('span', {'class': 'cardTitle'}).find('a').text
+                    url = result.find('span', {'class': 'cardTitle'}).find('a')['href'].replace('../', 'http://gatherer.wizards.com/Pages/')
+                    resultsArray += [{'name': name, 'url': url}]
+
+            return resultsArray
+        else: # request was redirected
+            html = response.read()
+            soup = BeautifulSoup(html)
+
+            try:
+                url = response.geturl()
+                name = soup.find("div", attrs = {"class": "contentTitle"}).find("span").contents[0]
+
+                return [{'name': name, 'url': url}]
+            except:
+                return []
 
     except:
         return []
