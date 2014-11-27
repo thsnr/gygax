@@ -16,7 +16,8 @@ def dbc(bot, sender, text):
     # Roll until we have 6, 5 and 4 or we run out of rolls.
     while need > 3 and rolls_left > 0:
         results = roll.roll_dice(dice_count, 6)
-        reply.append(" + ".join(map(str, results)))
+        reply.append("[{}]".format(
+            ", ".join(map(str, reversed(sorted(results))))))
         rolls_left -= 1
 
         # Check for needed dice
