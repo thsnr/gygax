@@ -2,7 +2,7 @@
 
 """
 :mod:`gygax.modules.gatherer` --- Module to search from gatherer.wizards.com
-=================================================================
+============================================================================
 """
 
 from urllib import request
