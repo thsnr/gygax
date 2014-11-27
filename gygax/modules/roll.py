@@ -2,14 +2,21 @@
 
 """
 :mod:`gygax.modules.roll` --- Module for rolling dice.
-=================================================================
+======================================================
 """
 
 import random
 
+def roll_dice(count, size):
+    return [random.randint(1, size) for _ in range(count)]
+
+def format_results(results):
+    return str(results[0]) if len(results) == 1 else "{} = {}".format(
+            " + ".join(map(str, results)), sum(results))
+
 def roll(bot, sender, text):
     if not text:
-        bot.reply(".roll what?")
+        bot.reply("roll what?")
         return
     try:
         count, size = text.split("d", 1)
@@ -21,9 +28,6 @@ def roll(bot, sender, text):
         bot.reply("invalid die")
         return
 
-    results = []
-    for i in range(count):
-        results.append(random.randint(1, size))
-    bot.reply(str(results[0]) if count == 1 else "{} = {}".format(
-            " + ".join(map(str, results)), sum(results)))
+    results = roll_dice(count, size)
+    bot.reply(format_results(roll_dice(count, size)))
 roll.command = ".roll"
