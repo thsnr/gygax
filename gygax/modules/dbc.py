@@ -5,7 +5,7 @@
 ==================================================================
 """
 
-import gygax.modules.roll as roll
+from gygax.modules import roll
 
 def dbc(bot, sender, text):
     need = 6       # The next die needed.
