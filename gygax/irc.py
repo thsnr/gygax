@@ -228,3 +228,8 @@ def _parse_message(message):
         params = tuple(params)  # make params read-only
 
     return prefix, command, params
+
+def split_name(name):
+    nick, rest = name.split("!", 1)
+    user, host = rest.split("@", 1)
+    return nick, user, host

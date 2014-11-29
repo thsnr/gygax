@@ -44,10 +44,11 @@ class Bot(gygax.irc.Client):
 
     def handle(self, sender, recipient, text):
         def reply(text):
-           if recipient == self.nick:
-               self.message(sender, text)
-           else:
-               self.message(recipient, text)
+            if recipient == self.nick:
+                nick, _, _ = gygax.irc.split_name(sender)
+                self.message(nick, text)
+            else:
+                self.message(recipient, text)
         self.reply = reply
 
         for command, func in self._commands.items():
