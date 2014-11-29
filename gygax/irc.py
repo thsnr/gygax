@@ -163,6 +163,14 @@ class Client(asynchat.async_chat):
         """
         raise NotImplementedError("must be implemented in subclass")
 
+    def tick(self):
+        """Called on every PING message from the server.
+
+        Default implementation does nothing. Can be overridden to perform
+        periodic tasks.
+        """
+        pass
+
     def handle_close(self):
         print("Connection closed!")
         self.close()
@@ -183,6 +191,7 @@ class Client(asynchat.async_chat):
 
     def _on_PING(self, prefix, params):
         self._command("PONG", ":" + params[0])
+        self.tick()
 
     def _on_INVITE(self, prefix, params):
         nick, channel = params
