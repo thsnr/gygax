@@ -44,26 +44,38 @@ def twitch(bot, sender, text):
 
     command = words[0]
     args = words[1:]
-    if not len(args):
-        bot.reply("missing channel names")
-        return
+    nick, _, _ = irc.split_name(sender)
 
     if command == "check":
-        results = check_channels(*args)
-        for channel in args:
+        if len(args):
+            check = args
+        else:
+            check = []
+            for channel, followers in watchdog._following.items():
+                if nick in followers:
+                    check.append(channel)
+            if not len(check):
+                bot.reply("you are not following any channels")
+                return
+        results = check_channels(*check)
+        for channel in check:
             if channel in results:
                 bot.reply(format_metadata(results[channel]))
             else:
                 bot.reply("{} is offline".format(channel))
 
     elif command == "follow":
-        nick, _, _ = irc.split_name(sender)
+        if not len(args):
+            bot.reply("which channels to follow?")
+            return
         for channel in args:
             watchdog._following[channel].add(nick)
         bot.reply("done")
 
     elif command == "unfollow":
-        nick, _, _ = irc.split_name(sender)
+        if not len(args):
+            bot.reply("which channels to unfollow?")
+            return
         for channel in args:
             watchdog._following[channel].remove(nick)
         bot.reply("done")
