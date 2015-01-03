@@ -53,11 +53,11 @@ def twitch(bot, sender, text):
             bot.reply("no channels to check")
             return
         results = check_channels(*check)
-        for channel in check:
-            if channel in results:
-                bot.reply(format_metadata(results[channel]))
-            else:
-                bot.reply("{} is offline".format(channel))
+        if not len(results):
+            bot.reply("no channels online")
+            return
+        for data in results.values():
+            bot.reply(format_metadata(data))
 
     elif command == "following":
         channels = ", ".join(following(nick))
