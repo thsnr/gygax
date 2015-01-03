@@ -39,7 +39,8 @@ def format_metadata(metadata):
 def twitch(bot, sender, text):
     words = text.split()
     if not len(words):
-        bot.reply("missing command, use one of: check, follow, unfollow")
+        bot.reply("missing command, use one of: " +
+                "check, following, follow, unfollow")
         return
 
     command = words[0]
@@ -47,22 +48,23 @@ def twitch(bot, sender, text):
     nick, _, _ = irc.split_name(sender)
 
     if command == "check":
-        if len(args):
-            check = args
-        else:
-            check = []
-            for channel, followers in watchdog._following.items():
-                if nick in followers:
-                    check.append(channel)
-            if not len(check):
-                bot.reply("you are not following any channels")
-                return
+        check = args if len(args) else list(following(nick))
+        if not len(check):
+            bot.reply("no channels to check")
+            return
         results = check_channels(*check)
         for channel in check:
             if channel in results:
                 bot.reply(format_metadata(results[channel]))
             else:
                 bot.reply("{} is offline".format(channel))
+
+    elif command == "following":
+        channels = ", ".join(following(nick))
+        if not len(channels):
+            bot.reply("you are not following any channels")
+            return
+        bot.reply("you are following: " + channels)
 
     elif command == "follow":
         if not len(args):
@@ -96,3 +98,8 @@ def watchdog(bot):
 watchdog._following = collections.defaultdict(set)
 watchdog._last_online = set()
 watchdog.tick = 1
+
+def following(nick):
+    for channel, followers in watchdog._following.items():
+        if nick in followers:
+            yield channel
