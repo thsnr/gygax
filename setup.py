@@ -23,5 +23,5 @@ setup(
             "Programming Language :: Python :: 3.4",
             "Topic :: Communications :: Chat :: Internet Relay Chat",
             ],
-        requires=['beautifulsoup4'],
+        install_requires=['beautifulsoup4'],
     )
