@@ -18,6 +18,9 @@ def roll(bot, sender, text):
     if not text:
         bot.reply("roll what?")
         return
+    if text == "stats":
+        bot.reply(", ".join(map(str, sorted([sum(sorted(roll_dice(4, 6))[1:]) for _ in range(6)])[::-1])))
+        return
     try:
         count, size = text.split("d", 1)
         count = int(count) if len(count) else 1
