@@ -14,6 +14,8 @@ class Bot(gygax.irc.Client):
         super().__init__(config["nick"], config["real"])
         self._config = config
         self._commands = {}
+        self._ticks = {}
+        self._tick_count = 0
 
         for module in config["modules"].split(" "):
             self._load_module(module)
@@ -41,6 +43,12 @@ class Bot(gygax.irc.Client):
             if hasattr(func, "command"):
                 print("Binding", func.command, "to", func.__name__)
                 self._commands[func.command] = func
+            if hasattr(func, "tick"):
+                print("Setting up", func.__name__, "after every", func.tick, "tick(s)")
+                if module in self._ticks:
+                    self._ticks[module.__name__].append(func)
+                else:
+                    self._ticks[module.__name__] = [func]
 
     def handle(self, sender, recipient, text):
         def reply(text):
@@ -61,3 +69,13 @@ class Bot(gygax.irc.Client):
                     self.reply("something went wrong")
                 finally:
                     break
+
+    def tick(self):
+        self._tick_count += 1
+        for module, funcs in self._ticks.items():
+            for func in funcs:
+                if self._tick_count % func.tick == 0:
+                    try:
+                        func(self)
+                    except Exception as e:
+                        print("Error:", func.__name__, "in", module, "failed:", e)
