@@ -1,0 +1,5 @@
+gygax (0.1~dev2) UNRELEASED; urgency=medium
+
+  * Initial Debian-packaged release.
+
+ -- Tiit Pikma <1042524+thsnr@users.noreply.github.com>  Sat, 11 Apr 2020 13:38:49 +0300

@@ -1,0 +1,12 @@
+Source: gygax
+Section: net
+Priority: optional
+Maintainer: Tiit Pikma <1042524+thsnr@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 12), dh-python, python3-all
+Standards-Version: 4.5.0
+
+Package: gygax
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: minimalistic IRC bot
+ Simple IRC bot with dynamically loadable modules.
