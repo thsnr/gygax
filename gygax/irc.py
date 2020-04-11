@@ -217,31 +217,34 @@ def _parse_message(message):
     """Parses the message into a ``(prefix, command, params)`` tuple."""
     # From http://tools.ietf.org/html/rfc2812#section-2.3.1:
     # message = [ ":" prefix SPACE ] command [ params ]
+    # params  = *14( SPACE middle ) [ SPACE ":" trailing ]
+    #         =/ 14( SPACE middle ) [ SPACE [ ":" ] trailing ]
     prefix = None
     if message.startswith(":"):
-        prefix, message = message[1:].split(" ", 1)
+        prefix, message = _pop_message(message)
+        prefix = prefix[1:]
 
-    command = message
-    params = None
+    command, message = _pop_message(message)
+
+    params = list()
+    while message and not message.startswith(":") and len(params) < 14:
+        middle, message = _pop_message(message)
+        params.append(middle)
+    if message:  # trailing
+        if message.startswith(":"):
+            message = message[1:]
+        params.append(message)
+    params = tuple(params)  # make params read-only
+
+    return prefix, command, params or None
+
+def _pop_message(message):
+    """Pops the top-most space-separated component from the message."""
     if " " in message:
-        command, params = message.split(" ", 1)
+        component, message = message.split(" ", 1)
+        return component, message.lstrip(" ")
+    return message, ""
 
-    # params = *14( SPACE middle ) [ SPACE ":" trailing ]
-    #        =/ 14( SPACE middle ) [ SPACE [ ":" ] trailing ]
-    # Note that we already removed the first SPACE of params.
-    if params:
-        if params.startswith(":"):
-            params = (params[1:],)
-        elif " :" in params:
-            middles, trailing = params.split(" :", 1)
-            params = middles.split(" ") + [trailing]
-        else:
-            params = params.split(" ", 14)
-            if params[-1].startswith(":"):
-                params[-1] = params[-1][1:]  # strip the optional ":"
-        params = tuple(params)  # make params read-only
-
-    return prefix, command, params
 
 def split_name(name):
     nick, rest = name.split("!", 1)
