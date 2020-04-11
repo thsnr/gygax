@@ -4,6 +4,7 @@
 import argparse
 import collections
 import configparser
+import logging.config
 import os.path
 import sys
 
@@ -43,6 +44,8 @@ def main(argv=None):
         return
 
     config.read(args.config)
+    if "loggers" in config:
+        logging.config.fileConfig(args.config)
 
     gygax.bot.Bot(**config["bot"]).run()
 
