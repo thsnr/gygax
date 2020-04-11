@@ -32,7 +32,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Start the gygax IRC bot.")
     parser.add_argument("-c", "--config", metavar="<config>",
             help="location of the configuration file to use",
-            default=os.path.expanduser("~/.gygax/config"))
+            default=os.path.expanduser("~/.config/gygax.ini"))
     parser.add_argument("--default", action="store_true",
             help="print out a default configuration and exit")
     args = parser.parse_args(argv)
