@@ -21,13 +21,14 @@ class Bot(gygax.irc.Client):
         self._ticks = {}
         self._tick_count = 0
 
-        for module in config["modules"].split(" "):
+        for module in config.get("modules", "").split():
             self._load_module(module)
 
     def run(self):
         """Connect to the IRC server and start the bot."""
         super().run((self._config["server"], int(self._config["port"])),
-                self._config["channels"].split(" "), self._config["password"])
+                channels=self._config.get("channels", "").split() or None,
+                password=self._config.get("password"))
 
     def _load_module(self, name):
         try:
