@@ -60,7 +60,7 @@ class Bot(gygax.irc.Client):
         self.reply = reply
 
         for command, func in self._commands.items():
-            if text.startswith(command):
+            if text == command or text.startswith(command + " "):
                 args = text[len(command):].strip()
                 try:
                     func(self, sender, args)
