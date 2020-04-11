@@ -16,6 +16,9 @@ to build IRC bots or custom clients.
 
 import asynchat
 import asyncore
+import logging
+
+log = logging.getLogger(__name__)
 
 class Client(asynchat.async_chat):
 
@@ -73,14 +76,14 @@ class Client(asynchat.async_chat):
         self._channels = channels or self.channels
         self._password = password or self.password
 
-        print("Connecting to {}:{}...".format(*address), end="", flush=True)
+        log.info("connecting to {}:{}...".format(*address))
         self.create_socket()
         self.connect(address)
         asyncore.loop()
 
     def handle_connect(self):
-        print("connected!")
-        print("Registering...", end="", flush=True)
+        log.info("connected")
+        log.info("registering as {}...".format(self.nick))
         if self.password:
             self._command("PASS", self.password)
         self._command("NICK", self.nick)
@@ -98,9 +101,9 @@ class Client(asynchat.async_chat):
         message = " ".join(message_parts).encode("utf-8")
         if len(message) > 510:
             message = message[:510]
-            print("WARNING: Truncated too long message: {}".format(message))
+            log.warning("truncated too long message: {}".format(message))
 
-        print("DEBUG: pushing {}".format(message))
+        log.debug("pushing {}".format(message))
         self.push(message + b"\r\n")
 
     def message(self, recipient, text):
@@ -119,10 +122,10 @@ class Client(asynchat.async_chat):
         message = "".join(self._incoming)
         self._incoming = []
 
-        print("DEBUG: received {}".format(message))
+        log.debug("received {}".format(message))
         prefix, command, params = _parse_message(message)
         def _ignore(*args):
-            print("DEBUG: Ignoring unhandled command {}".format(command))
+            log.debug("ignoring unhandled command {}".format(command))
 
         getattr(self, "_on_" + command, _ignore)(prefix, params)
 
@@ -133,7 +136,7 @@ class Client(asynchat.async_chat):
             the channels to join.
         """
         for channel in channels:
-            print("Joining channel {}...".format(channel), end="", flush=True)
+            log.info("joining channel {}...".format(channel))
             self._command("JOIN", channel)
 
     def quit(self, message="Quit"):
@@ -172,7 +175,7 @@ class Client(asynchat.async_chat):
         pass
 
     def handle_close(self):
-        print("Connection closed!")
+        log.info("connection closed")
         self.close()
 
     # The following functions are invoked when the corresponding command is
@@ -180,7 +183,7 @@ class Client(asynchat.async_chat):
 
     def _on_004(self, prefix, params):
         # The server sends Replies 001 to 004 upon successful registration.
-        print("registered!")
+        log.info("registered")
         self.join(*self.channels)
         self._channels = set()  # Will be filled by _on_JOIN with channels
                                 # successfully joined.
@@ -188,7 +191,7 @@ class Client(asynchat.async_chat):
     def _on_JOIN(self, prefix, params):
         nick, _, _ = split_name(prefix)
         if nick == self.nick:
-            print("joined!")
+            log.info("joined channel {}".format(params[0]))
             self.channels.add(params[0])
 
     def _on_PING(self, prefix, params):
@@ -197,13 +200,13 @@ class Client(asynchat.async_chat):
 
     def _on_INVITE(self, prefix, params):
         nick, channel = params
-        print("Invited to join channel {} by {}".format(channel, prefix))
+        log.info("invited to join channel {} by {}".format(channel, prefix))
         self.join(channel)
 
     def _on_KICK(self, prefix, params):
         channel, nick, message = params
         if nick == self.nick:
-            print("Kicked from channel {} by {}".format(channel, prefix))
+            log.info("kicked from channel {} by {}".format(channel, prefix))
             self.channels.remove(channel)
 
     def _on_PRIVMSG(self, prefix, params):

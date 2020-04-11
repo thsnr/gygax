@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 import gygax.irc
 import gygax.modules
+
+log = logging.getLogger(__name__)
 
 class Bot(gygax.irc.Client):
 
@@ -29,11 +33,11 @@ class Bot(gygax.irc.Client):
         try:
             module = gygax.modules.load_module(name)
         except Exception as e:
-            print("Failed to load module {}: {}".format(name, e))
+            log.exception("failed to load module {}: {}".format(name, e))
             return False
         else:
             self._bind(module)
-            print("Loaded module", name)
+            log.info("loaded module {}".format(name))
             return True
 
     def _bind(self, module):
@@ -41,10 +45,10 @@ class Bot(gygax.irc.Client):
             module.reset(self, self._config)
         for _, func in vars(module).items():
             if hasattr(func, "command"):
-                print("Binding", func.command, "to", func.__name__)
+                log.debug("binding {} to {}".format(func.command, func.__name__))
                 self._commands[func.command] = func
             if hasattr(func, "tick"):
-                print("Setting up", func.__name__, "after every", func.tick, "tick(s)")
+                log.debug("calling {} after every {} tick(s)".format(func.__name__, func.tick))
                 if module in self._ticks:
                     self._ticks[module.__name__].append(func)
                 else:
@@ -65,7 +69,7 @@ class Bot(gygax.irc.Client):
                 try:
                     func(self, sender, args)
                 except Exception as e:
-                    print("Error:", func.__name__, "failed:", e)
+                    log.exception("{} failed: {}".format(command, e))
                     self.reply("something went wrong")
                 finally:
                     break
@@ -78,4 +82,4 @@ class Bot(gygax.irc.Client):
                     try:
                         func(self)
                     except Exception as e:
-                        print("Error:", func.__name__, "in", module, "failed:", e)
+                        log.exception("ticking {}.{} failed: {}".format(module, func.__name__, e))
