@@ -186,8 +186,10 @@ class Client(asynchat.async_chat):
                                 # successfully joined.
 
     def _on_JOIN(self, prefix, params):
-        print("joined!")
-        self.channels.add(params[0])
+        nick, _, _ = split_name(prefix)
+        if nick == self.nick:
+            print("joined!")
+            self.channels.add(params[0])
 
     def _on_PING(self, prefix, params):
         self._command("PONG", ":" + params[0])
