@@ -73,8 +73,8 @@ class Client(asynchat.async_chat):
         :param iter channels: The list of channels to join on startup.
         :param str password: The optional connection password to use.
         """
-        self._channels = channels or self.channels
-        self._password = password or self.password
+        self._channels = channels or set()
+        self._password = password
 
         log.info("connecting to {}:{}...".format(*address))
         self.create_socket()
