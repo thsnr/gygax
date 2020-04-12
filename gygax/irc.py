@@ -107,7 +107,7 @@ class Client(asynchat.async_chat):
                 len(message), newlen))
             message = message[:newlen]
 
-        log.debug("pushing {}".format(message))
+        log.debug("pushing {}".format(message.decode("utf-8")))
         self.push(message + b"\r\n")
 
     def message(self, recipient, text):
