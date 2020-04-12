@@ -100,8 +100,12 @@ class Client(asynchat.async_chat):
 
         message = " ".join(message_parts).encode("utf-8")
         if len(message) > 510:
-            message = message[:510]
-            log.warning("truncated too long message: {}".format(message))
+            newlen = 510
+            while message[newlen] & 0xc0 == 0x80:  # UTF-8 continuation byte
+                newlen -= 1
+            log.warning("truncating message from {} to {} bytes".format(
+                len(message), newlen))
+            message = message[:newlen]
 
         log.debug("pushing {}".format(message))
         self.push(message + b"\r\n")
