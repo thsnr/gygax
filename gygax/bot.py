@@ -51,6 +51,7 @@ class Bot(gygax.irc.Client):
             return False
 
     def _bind(self, module):
+        self._ticks.pop(module.__name__, None)
         if hasattr(module, "reset"):
             module.reset(self, self._config.get("module_" + module.__name__))
         for _, func in vars(module).items():
