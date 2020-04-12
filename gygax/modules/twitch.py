@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-:mod:`gygax.modules.gatherer` --- Module to track live channels on twitch.tv
-============================================================================
+:mod:`gygax.modules.twitch` --- Track live streams on Twitch
+============================================================
 """
 
 import codecs
@@ -12,29 +12,38 @@ from urllib import parse, request
 
 from gygax import irc
 
-def check_channels(*channels):
-    url = "https://api.twitch.tv/kraken/streams"
-    mime = "application/vnd.twitchtv.v2+json"
+client_id = None
 
+def reset(bot, config):
+    if not config or "client_id" not in config:
+        raise KeyError("no client_id provided")
+    global client_id
+    client_id = config["client_id"]
+
+def check_channels(*channels):
     # In the future we might want to use pagination, but currently 100 channels
     # is more than enough.
-    params = parse.urlencode({"channel": ",".join(channels), "limit": "100"})
+    logins = [("user_login", channel) for channel in channels]
+    req = request.Request("https://api.twitch.tv/helix/streams?{}".format(
+        parse.urlencode(logins + [("limit", 100)])))
+    req.add_header("Client-ID", client_id)
 
-    req = request.Request("{}?{}".format(url, params))
-    req.add_header("Accept", mime)
-    with request.urlopen(req) as f:
-        utf8 = codecs.getreader("utf-8")
-        data = json.load(utf8(f))
+    with request.urlopen(req) as resp:
+        data = json.load(codecs.getreader("utf-8")(resp)).get("data")
 
     # Return a dict from an online channel's name to the channel's metadata.
     results = {}
-    for stream in data["streams"]:
-        results[stream["channel"]["name"]] = stream["channel"]
+    for stream in data:
+        name = stream.get("user_name", "").lower()
+        if name:
+            results[name] = stream
     return results
 
 def format_metadata(metadata):
-    return "{} ({}) is online with status: {}".format(
-            metadata["name"], metadata["url"], metadata["status"])
+    return "{} ({}) is online with title: {}".format(
+            metadata.get("user_name"),
+            "https://twitch.tv/{}".format(metadata.get("user_name").lower()),
+            metadata.get("title", "[missing title?]"))
 
 def twitch(bot, sender, text):
     words = text.split()
