@@ -48,7 +48,7 @@ def main(argv=None):
     if "loggers" in config:
         logging.config.fileConfig(args.config)
 
-    gygax.bot.Bot(**config["bot"]).run()
+    gygax.bot.Bot(**config).run()
 
 if __name__ == "__main__":
     main()

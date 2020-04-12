@@ -15,18 +15,19 @@ class Bot(gygax.irc.Client):
 
     def __init__(self, **config):
         """Creates a new IRC bot and initializes it from config."""
-        super().__init__(config["nick"], config["real"])
+        super().__init__(config["bot"]["nick"], config["bot"]["real"])
         self._config = config
         self._commands = {}
         self._ticks = {}
         self._tick_count = 0
 
-        for module in config.get("modules", "").split():
+        for module in config["bot"].get("modules", "").split():
             self._load_module(module)
 
     def run(self):
         """Connect to the IRC server and start the bot."""
-        autosend = self._config.get("autosend")
+        config = self._config["bot"]
+        autosend = config.get("autosend")
         if autosend:
             # autosend commands are semicolon-separated; strip any surrounding
             # whitespace and drop empty commands.
@@ -34,9 +35,9 @@ class Bot(gygax.irc.Client):
             autosend = map(lambda s: s.strip(), autosend)
             autosend = filter(None, autosend)
 
-        super().run((self._config["server"], int(self._config["port"])),
-                channels=self._config.get("channels", "").split() or None,
-                password=self._config.get("password"),
+        super().run((config["server"], int(config["port"])),
+                channels=config.get("channels", "").split() or None,
+                password=config.get("password"),
                 autosend=autosend or None)
 
     def _load_module(self, name):
