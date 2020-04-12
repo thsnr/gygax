@@ -7,6 +7,6 @@ Standards-Version: 4.5.0
 
 Package: gygax
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}
+Depends: ${python3:Depends}, ${misc:Depends}, ca-certificates
 Description: minimalistic IRC bot
  Simple IRC bot with dynamically loadable modules.
