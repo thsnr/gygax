@@ -17,6 +17,7 @@ to build IRC bots or custom clients.
 import asynchat
 import asyncore
 import logging
+import time
 
 log = logging.getLogger(__name__)
 
@@ -59,17 +60,21 @@ class Client(asynchat.async_chat):
         self._real = real
         self._channels = set()
         self._password = None
+        self._autosend = list()
 
-    def run(self, address, channels=None, password=None):
+    def run(self, address, channels=None, password=None, autosend=None):
         """Connect to an IRC server and start the client's main loop.
 
         :param tuple address: A tuple ``(host, port)`` with the address of the
             IRC server to connect to.
         :param iter channels: The list of channels to join on startup.
         :param str password: The optional connection password to use.
+        :param iter autosend: The list of messages to send after successful
+            registration with the server, but before joining any channels.
         """
         self._channels = channels or set()
         self._password = password
+        self._autosend = autosend or list()
 
         log.info("connecting to {}:{}...".format(*address))
         self.create_socket()
@@ -92,8 +97,10 @@ class Client(asynchat.async_chat):
             if " " in args[-1]:
                 args[-1] = ":" + args[-1]
             message_parts += args
+        self._push(" ".join(message_parts))
 
-        message = " ".join(message_parts).encode("utf-8")
+    def _push(self, message):
+        message = message.encode("utf-8")
         if len(message) > 510:
             newlen = 510
             while message[newlen] & 0xc0 == 0x80:  # UTF-8 continuation byte
@@ -183,6 +190,9 @@ class Client(asynchat.async_chat):
     def _on_004(self, prefix, params):
         # The server sends Replies 001 to 004 upon successful registration.
         log.info("registered")
+        for message in self._autosend:
+            self._push(message)
+            time.sleep(1)  # give the server time to handle the message
         self.join(*self.channels)
         self._channels = set()  # Will be filled by _on_JOIN with channels
                                 # successfully joined.
