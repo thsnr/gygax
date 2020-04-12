@@ -22,6 +22,7 @@ def _default_config():
             ("server", "irc.example.org"),
             ("port", 6667),
             ("password", ""),
+            ("autosend", ""),
             ("channels", "#example"),
             ("modules", gygax.modules.list_modules()),
         ))

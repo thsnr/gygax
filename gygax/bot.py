@@ -26,9 +26,18 @@ class Bot(gygax.irc.Client):
 
     def run(self):
         """Connect to the IRC server and start the bot."""
+        autosend = self._config.get("autosend")
+        if autosend:
+            # autosend commands are semicolon-separated; strip any surrounding
+            # whitespace and drop empty commands.
+            autosend = autosend.split(";")
+            autosend = map(lambda s: s.strip(), autosend)
+            autosend = filter(None, autosend)
+
         super().run((self._config["server"], int(self._config["port"])),
                 channels=self._config.get("channels", "").split() or None,
-                password=self._config.get("password"))
+                password=self._config.get("password"),
+                autosend=autosend or None)
 
     def _load_module(self, name):
         try:
