@@ -120,10 +120,10 @@ class Client(asynchat.async_chat):
         self._command("PRIVMSG", recipient, text)
 
     def collect_incoming_data(self, data):
-        self._incoming.append(data.decode("utf-8"))
+        self._incoming.append(data)
 
     def found_terminator(self):
-        message = "".join(self._incoming)
+        message = b"".join(self._incoming).decode("utf-8")
         self._incoming = []
 
         log.debug("received {}".format(message))
