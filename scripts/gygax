@@ -23,7 +23,7 @@ def _default_config():
             ("port", 6667),
             ("password", ""),
             ("autosend", ""),
-            ("channels", "#example"),
+            ("channels", ""),
             ("modules", gygax.modules.list_modules()),
         ))
 
