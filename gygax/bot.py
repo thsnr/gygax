@@ -43,13 +43,12 @@ class Bot(gygax.irc.Client):
     def _load_module(self, name):
         try:
             module = gygax.modules.load_module(name)
-        except Exception as e:
-            log.exception("failed to load module {}: {}".format(name, e))
-            return False
-        else:
             self._bind(module)
             log.info("loaded module {}".format(name))
             return True
+        except Exception as e:
+            log.exception("failed to load module {}: {}".format(name, e))
+            return False
 
     def _bind(self, module):
         if hasattr(module, "reset"):
