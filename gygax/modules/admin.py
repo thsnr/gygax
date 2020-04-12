@@ -5,9 +5,17 @@
 =================================================================
 """
 
+authorized = None
+
+def reset(bot, config):
+    global authorized
+    authorized = None
+    if config:
+        authorized = config.get("authorized")
+
 def is_admin(sender):
     # Totally secure authorization method :)
-    return sender.endswith("@tiit.users.quakenet.org")
+    return authorized and sender.endswith(authorized)
 
 def quit(bot, sender, text):
     if not is_admin(sender):
