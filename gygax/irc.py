@@ -49,11 +49,6 @@ class Client(asynchat.async_chat):
         """A :func:`set` containing the channels the client is connected to."""
         return self._channels
 
-    @property
-    def password(self):
-        """The connection password used."""
-        return self._password
-
     def __init__(self, nick, real):
         """Creates a new IRC client and initializes its attributes."""
         super().__init__()
@@ -84,8 +79,8 @@ class Client(asynchat.async_chat):
     def handle_connect(self):
         log.info("connected")
         log.info("registering as {}...".format(self.nick))
-        if self.password:
-            self._command("PASS", self.password)
+        if self._password:
+            self._command("PASS", self._password)
         self._command("NICK", self.nick)
         self._command("USER", self.nick, "0", "*", self.real)
 
