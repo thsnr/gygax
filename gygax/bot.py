@@ -53,7 +53,7 @@ class Bot(gygax.irc.Client):
 
     def _bind(self, module):
         if hasattr(module, "reset"):
-            module.reset(self, self._config)
+            module.reset(self, self._config.get("module_" + module.__name__))
         for _, func in vars(module).items():
             if hasattr(func, "command"):
                 log.debug("binding {} to {}".format(func.command, func.__name__))
