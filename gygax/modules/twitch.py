@@ -34,38 +34,42 @@ def twitch(bot, sender, text):
     nick, _, _ = irc.split_name(sender)
 
     if command == "check":
-        check = args or list(following(nick))
-        if not check:
-            bot.reply("no channels to check")
+        if args:
+            user_ids = query("users", "login", *args, index="id").keys()
+        else:
+            user_ids = following_ids(nick)
+        if not user_ids:
+            bot.reply("no users to check")
             return
-        online = query("streams", "user_login", *check)
+        online = query("streams", "user_id", *user_ids)
         if not online:
-            bot.reply("no channels online")
+            bot.reply("no users online")
             return
         for stream in online.values():
             bot.reply(format_stream(stream))
 
     elif command == "following":
-        channels = ", ".join(following(nick))
-        if not channels:
+        user_ids = following_ids(nick)
+        if not user_ids:
             bot.reply("you are not following any channels")
             return
-        bot.reply("you are following: " + channels)
+        bot.reply("you are following: {}".format(", ".join(
+            query("users", "id", *user_ids, index="display_name").keys()))
 
     elif command == "follow":
         if not args:
-            bot.reply("which channels to follow?")
+            bot.reply("which users to follow?")
             return
-        for channel in args:
-            watchdog._following[channel].add(nick)
+        for user_id in query("users", "login", *args, index="id"):
+            watchdog._following[user_id].add(nick)
         bot.reply("done")
 
     elif command == "unfollow":
         if not args:
-            bot.reply("which channels to unfollow?")
+            bot.reply("which users to unfollow?")
             return
-        for channel in args:
-            watchdog._following[channel].remove(nick)
+        for user_id in query("users", "login", *args, index="id"):
+            watchdog._following[user_id].remove(nick)
         bot.reply("done")
 
     else:
@@ -75,10 +79,10 @@ twitch.command = ".twitch"
 
 def watchdog(bot):
     if watchdog._following:
-        online = query("streams", "user_login", *watchdog._following.keys(), index="user_name")
-        for channel, stream in online.values():
-            if channel not in watchdog._last_online:
-                for target in watchdog._following[channel.lower()]:
+        online = query("streams", "user_id", *watchdog._following.keys())
+        for user_id, stream in online.values():
+            if user_id not in watchdog._last_online:
+                for target in watchdog._following[user_id]:
                     bot.message(target, format_stream(stream))
         watchdog._last_online = set(online.keys())
 
@@ -93,10 +97,8 @@ def format_stream(stream):
             "https://twitch.tv/{}".format(stream.get("user_name").lower()),
             stream.get("title", "[missing title?]"))
 
-def following(nick):
-    for channel, followers in watchdog._following.items():
-        if nick in followers:
-            yield channel
+def following_ids(nick):
+    return [user_id for user_id, nicks in watchdog._following.items() if nick in nicks]
 
 def query(what, field, *values, index=None):
     # In the future we might want to use pagination, but currently limit all
