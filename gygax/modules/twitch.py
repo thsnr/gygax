@@ -70,6 +70,8 @@ def twitch(bot, sender, text):
             return
         for user_id in query("users", "login", *args, index="id"):
             watchdog._following[user_id].remove(nick)
+            if not watchdog._following[user_id]:
+                del watchdog._following[user_id]
         bot.reply("done")
 
     else:
