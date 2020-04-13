@@ -49,12 +49,7 @@ def twitch(bot, sender, text):
             bot.reply(format_stream(stream))
 
     elif command == "following":
-        user_ids = following_ids(nick)
-        if not user_ids:
-            bot.reply("you are not following any channels")
-            return
-        bot.reply("you are following: {}".format(", ".join(
-            query("users", "id", *user_ids, index="display_name").keys()))
+        bot.reply(following(nick))
 
     elif command == "follow":
         if not args:
@@ -62,7 +57,7 @@ def twitch(bot, sender, text):
             return
         for user_id in query("users", "login", *args, index="id"):
             watchdog._following[user_id].add(nick)
-        bot.reply("done")
+        bot.reply(following(nick))
 
     elif command == "unfollow":
         if not args:
@@ -72,7 +67,7 @@ def twitch(bot, sender, text):
             watchdog._following[user_id].remove(nick)
             if not watchdog._following[user_id]:
                 del watchdog._following[user_id]
-        bot.reply("done")
+        bot.reply(following(nick))
 
     else:
         bot.reply("unknown command")
@@ -98,6 +93,13 @@ def format_stream(stream):
             stream.get("user_name"),
             "https://twitch.tv/{}".format(stream.get("user_name").lower()),
             stream.get("title", "[missing title?]"))
+
+def following(nick):
+    user_ids = following_ids(nick)
+    if not user_ids:
+        return "you are not following any users"
+    return "you are following: {}".format(", ".join(
+           query("users", "id", *user_ids, index="display_name").keys()))
 
 def following_ids(nick):
     return [user_id for user_id, nicks in watchdog._following.items() if nick in nicks]
