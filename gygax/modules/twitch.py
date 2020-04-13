@@ -8,9 +8,12 @@
 import codecs
 import collections
 import json
+import logging
 from urllib import parse, request
 
 from gygax import irc
+
+log = logging.getLogger("gygax.modules.twitch")
 
 client_id = None
 
@@ -113,3 +116,23 @@ def following(nick):
     for channel, followers in watchdog._following.items():
         if nick in followers:
             yield channel
+
+def query(what, field, *values, index=None):
+    # In the future we might want to use pagination, but currently limit all
+    # requests to 100 responses.
+
+    filters = [(field, value) for value in values]
+    req = request.Request("https://api.twitch.tv/helix/{}?{}".format(
+        what, parse.urlencode(filters + [("limit", 100)])))
+    req.add_header("Client-ID", client_id)
+
+    log.debug(req.full_url)
+    with request.urlopen(req) as resp:
+        data = json.load(codecs.getreader("utf-8")(resp)).get("data", [])
+
+    results = {}
+    index = index or field
+    for result in data:
+        if index in result:
+            results[result[index]] = result
+    return results
