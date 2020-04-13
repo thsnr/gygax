@@ -47,22 +47,21 @@ def format_metadata(metadata):
 
 def twitch(bot, sender, text):
     words = text.split()
-    if not len(words):
+    if not words:
         bot.reply("missing command, use one of: " +
                 "check, following, follow, unfollow")
         return
 
-    command = words[0]
-    args = words[1:]
+    command, args = words[0], words[1:]
     nick, _, _ = irc.split_name(sender)
 
     if command == "check":
-        check = args if len(args) else list(following(nick))
-        if not len(check):
+        check = args or list(following(nick))
+        if not check:
             bot.reply("no channels to check")
             return
         results = check_channels(*check)
-        if not len(results):
+        if not results:
             bot.reply("no channels online")
             return
         for data in results.values():
@@ -70,13 +69,13 @@ def twitch(bot, sender, text):
 
     elif command == "following":
         channels = ", ".join(following(nick))
-        if not len(channels):
+        if not channels:
             bot.reply("you are not following any channels")
             return
         bot.reply("you are following: " + channels)
 
     elif command == "follow":
-        if not len(args):
+        if not args:
             bot.reply("which channels to follow?")
             return
         for channel in args:
@@ -84,7 +83,7 @@ def twitch(bot, sender, text):
         bot.reply("done")
 
     elif command == "unfollow":
-        if not len(args):
+        if not args:
             bot.reply("which channels to unfollow?")
             return
         for channel in args:
@@ -93,16 +92,18 @@ def twitch(bot, sender, text):
 
     else:
         bot.reply("unknown command")
+
 twitch.command = ".twitch"
 
 def watchdog(bot):
-    if len(watchdog._following):
+    if watchdog._following:
         online = check_channels(*watchdog._following.keys())
         for channel in online:
             if channel not in watchdog._last_online:
                 for target in watchdog._following[channel]:
                     bot.message(target, format_metadata(online[channel]))
         watchdog._last_online = set(online.keys())
+
 # FIXME: Make _following persistent.
 watchdog._following = collections.defaultdict(set)
 watchdog._last_online = set()
