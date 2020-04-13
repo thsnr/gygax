@@ -23,31 +23,6 @@ def reset(bot, config):
     global client_id
     client_id = config["client_id"]
 
-def check_channels(*channels):
-    # In the future we might want to use pagination, but currently 100 channels
-    # is more than enough.
-    logins = [("user_login", channel) for channel in channels]
-    req = request.Request("https://api.twitch.tv/helix/streams?{}".format(
-        parse.urlencode(logins + [("limit", 100)])))
-    req.add_header("Client-ID", client_id)
-
-    with request.urlopen(req) as resp:
-        data = json.load(codecs.getreader("utf-8")(resp)).get("data")
-
-    # Return a dict from an online channel's name to the channel's metadata.
-    results = {}
-    for stream in data:
-        name = stream.get("user_name", "").lower()
-        if name:
-            results[name] = stream
-    return results
-
-def format_metadata(metadata):
-    return "{} ({}) is online with title: {}".format(
-            metadata.get("user_name"),
-            "https://twitch.tv/{}".format(metadata.get("user_name").lower()),
-            metadata.get("title", "[missing title?]"))
-
 def twitch(bot, sender, text):
     words = text.split()
     if not words:
@@ -63,12 +38,12 @@ def twitch(bot, sender, text):
         if not check:
             bot.reply("no channels to check")
             return
-        results = check_channels(*check)
-        if not results:
+        online = query("streams", "user_login", *check)
+        if not online:
             bot.reply("no channels online")
             return
-        for data in results.values():
-            bot.reply(format_metadata(data))
+        for stream in online.values():
+            bot.reply(format_stream(stream))
 
     elif command == "following":
         channels = ", ".join(following(nick))
@@ -100,17 +75,23 @@ twitch.command = ".twitch"
 
 def watchdog(bot):
     if watchdog._following:
-        online = check_channels(*watchdog._following.keys())
-        for channel in online:
+        online = query("streams", "user_login", *watchdog._following.keys(), index="user_name")
+        for channel, stream in online.values():
             if channel not in watchdog._last_online:
-                for target in watchdog._following[channel]:
-                    bot.message(target, format_metadata(online[channel]))
+                for target in watchdog._following[channel.lower()]:
+                    bot.message(target, format_stream(stream))
         watchdog._last_online = set(online.keys())
 
 # FIXME: Make _following persistent.
 watchdog._following = collections.defaultdict(set)
 watchdog._last_online = set()
 watchdog.tick = 1
+
+def format_stream(stream):
+    return "{} ({}) is online with title: {}".format(
+            stream.get("user_name"),
+            "https://twitch.tv/{}".format(stream.get("user_name").lower()),
+            stream.get("title", "[missing title?]"))
 
 def following(nick):
     for channel, followers in watchdog._following.items():
