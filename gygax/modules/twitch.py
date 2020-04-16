@@ -41,7 +41,7 @@ def twitch(bot, sender, text):
         if not user_ids:
             bot.reply("no users to check")
             return
-        online = query("streams", "user_id", *user_ids)
+        online = streams(*user_ids)
         if not online:
             bot.reply("no users online")
             return
@@ -76,7 +76,7 @@ twitch.command = ".twitch"
 
 def watchdog(bot):
     if watchdog._following:
-        online = query("streams", "user_id", *watchdog._following.keys())
+        online = streams(*watchdog._following.keys())
         for user_id, stream in online.values():
             if user_id not in watchdog._last_online:
                 for target in watchdog._following[user_id]:
@@ -88,11 +88,28 @@ watchdog._following = collections.defaultdict(set)
 watchdog._last_online = set()
 watchdog.tick = 1
 
+def streams(*user_ids):
+    online = query("streams", "user_id", *user_ids)
+    if not online:
+        return {}
+
+    # Resolve game ids to game names.
+    game_ids = [stream["game_id"] for stream in online.values() if "game_id" in stream]
+    games = query("games", "id", *game_ids)
+
+    # Augment stream information with "stream_url" and "game_name".
+    for stream in online.values():
+        stream["stream_url"] = "https://twitch.tv/{}".format(stream.get("user_name").lower())
+        stream["game_name"] = games.get(stream.get("game_id"), {}).get("name")
+
+    return online
+
 def format_stream(stream):
-    return "{} ({}) is online with title: {}".format(
-            stream.get("user_name"),
-            "https://twitch.tv/{}".format(stream.get("user_name").lower()),
-            stream.get("title", "[missing title?]"))
+    return "{} ({}) is playing {} with title: {}".format(
+            stream.get("user_name") or "[missing user_name?]",
+            stream.get("stream_url") or "[missing stream_url?]",
+            stream.get("game_name") or "[missing game_name?]",
+            stream.get("title") or "[missing title?]")
 
 def following(nick):
     user_ids = following_ids(nick)
