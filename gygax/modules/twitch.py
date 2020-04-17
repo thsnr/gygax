@@ -41,7 +41,7 @@ def twitch(bot, sender, text):
         if not user_ids:
             bot.reply("no users to check")
             return
-        online = streams(*user_ids)
+        online = augment_streams(query("streams", "user_id", *user_ids))
         if not online:
             bot.reply("no users online")
             return
@@ -76,11 +76,11 @@ twitch.command = ".twitch"
 
 def watchdog(bot):
     if watchdog._following:
-        online = streams(*watchdog._following.keys())
-        for user_id, stream in online.items():
-            if user_id not in watchdog._last_online:
-                for target in watchdog._following[user_id]:
-                    bot.message(target, format_stream(stream))
+        online = query("streams", "user_id", *watchdog._following.keys())
+        fresh = {k: v for k, v in online.items() if k not in watchdog._last_online}
+        for user_id, stream in augment_streams(fresh).items():
+            for target in watchdog._following[user_id]:
+                bot.message(target, format_stream(stream))
         watchdog._last_online = set(online.keys())
 
 # FIXME: Make _following persistent.
@@ -88,21 +88,17 @@ watchdog._following = collections.defaultdict(set)
 watchdog._last_online = set()
 watchdog.tick = 1
 
-def streams(*user_ids):
-    online = query("streams", "user_id", *user_ids)
-    if not online:
-        return {}
-
+def augment_streams(streams):
     # Resolve game ids to game names.
-    game_ids = [stream["game_id"] for stream in online.values() if "game_id" in stream]
-    games = query("games", "id", *game_ids)
+    game_ids = [stream["game_id"] for stream in streams.values() if "game_id" in stream]
+    games = query("games", "id", *game_ids) if game_ids else {}
 
     # Augment stream information with "stream_url" and "game_name".
-    for stream in online.values():
+    for stream in streams.values():
         stream["stream_url"] = "https://twitch.tv/{}".format(stream.get("user_name").lower())
         stream["game_name"] = games.get(stream.get("game_id"), {}).get("name")
 
-    return online
+    return streams  # For chaining.
 
 def format_stream(stream):
     return "{} ({}) is playing {} with title: {}".format(
