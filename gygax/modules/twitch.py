@@ -77,7 +77,7 @@ twitch.command = ".twitch"
 def watchdog(bot):
     if watchdog._following:
         online = streams(*watchdog._following.keys())
-        for user_id, stream in online.values():
+        for user_id, stream in online.items():
             if user_id not in watchdog._last_online:
                 for target in watchdog._following[user_id]:
                     bot.message(target, format_stream(stream))
