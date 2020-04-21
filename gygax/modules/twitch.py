@@ -16,12 +16,23 @@ from gygax import irc
 log = logging.getLogger("gygax.modules.twitch")
 
 client_id = None
+following_db = None
 
 def reset(bot, config):
     if not config or "client_id" not in config:
         raise KeyError("no client_id provided")
     global client_id
     client_id = config["client_id"]
+
+    global following_db
+    following_db = config.get("following_db")
+    if following_db:
+        try:
+            with open(following_db) as fp:
+                for user_id, nicks in json.load(fp).items():
+                    watchdog._following[user_id].update(nicks)
+        except FileNotFoundError:
+            pass  # Nothing saved yet.
 
 def twitch(bot, sender, text):
     words = text.split()
@@ -57,6 +68,7 @@ def twitch(bot, sender, text):
             return
         for user_id in query("users", "login", *args, index="id"):
             watchdog._following[user_id].add(nick)
+        save_following()
         bot.reply(following(nick))
 
     elif command == "unfollow":
@@ -67,6 +79,7 @@ def twitch(bot, sender, text):
             watchdog._following[user_id].remove(nick)
             if not watchdog._following[user_id]:
                 del watchdog._following[user_id]
+        save_following()
         bot.reply(following(nick))
 
     else:
@@ -83,10 +96,14 @@ def watchdog(bot):
                 bot.message(target, format_stream(stream))
         watchdog._last_online = set(online.keys())
 
-# FIXME: Make _following persistent.
 watchdog._following = collections.defaultdict(set)
 watchdog._last_online = set()
 watchdog.tick = 1
+
+def save_following():
+    if following_db:
+        with open(following_db, "w") as fp:
+            json.dump({k: list(v) for k, v in watchdog._following.items()}, fp)
 
 def augment_streams(streams):
     # Resolve game ids to game names.
